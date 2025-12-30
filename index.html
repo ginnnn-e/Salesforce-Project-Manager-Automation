@@ -99,7 +99,9 @@
         .filter-link { cursor: pointer; color: var(--sf-brand); }
         .filter-link.active { color: #16325c; border-bottom: 2px solid #16325c; padding-bottom: 12px; margin-bottom: -12px; }
 
-        .feed-item { display: flex; gap: 12px; margin-bottom: 20px; }
+        .feed-item { display: flex; gap: 12px; margin-bottom: 20px; animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
         .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.9rem; flex-shrink: 0; }
         .avatar.user { background: #65cae4; }
         .avatar.bot { background: #4bca81; } 
@@ -242,12 +244,12 @@
     <div class="workspace">
         <div class="col-feed">
             <div class="tabs"><div class="tab active">Feed</div><div class="tab">Related</div></div>
-            <div class="feed-container">
+            <div class="feed-container" id="feed-list">
                 <div class="publisher">
                     <div class="pub-tabs"><div class="pub-tab active">Post</div><div class="pub-tab">Poll</div></div>
                     <div class="pub-input-area"><div class="fake-input">Share an update...<button class="share-btn">Share</button></div></div>
                 </div>
-                <div class="feed-filter">
+                <div class="feed-filter" id="feed-anchor">
                     <div class="filter-links"><span class="filter-link active">All Updates</span><span class="filter-link">Call Logs</span><span class="filter-link">Text Posts</span><span class="filter-link">Status Changes</span></div>
                     <div>
                         <div style="border:1px solid #dddbda; border-radius:4px; padding:4px 8px; display:inline-flex; align-items:center;">
@@ -256,6 +258,7 @@
                         <i class="fas fa-filter" style="color:#706e6b; margin-left:10px;"></i><i class="fas fa-sync" style="color:#706e6b; margin-left:10px;"></i>
                     </div>
                 </div>
+                
                 <div class="feed-item">
                     <div class="avatar user"><i class="fas fa-user"></i></div>
                     <div class="feed-content">
@@ -266,18 +269,8 @@
                         <div class="feed-info" style="margin-left:15px;">40m ago &bull; <a href="#" style="text-decoration:none; color:#706e6b;">Comment</a></div>
                     </div>
                 </div>
-                <div id="success-feed-item" class="feed-item" style="display:none;">
-                    <div class="avatar bot"><i class="fas fa-robot"></i></div>
-                    <div class="feed-content">
-                        <div class="feed-header"><i class="fas fa-chevron-right" style="font-size:0.7rem; color:#706e6b; margin-right:5px;"></i><a href="#">System Automation</a> <span style="font-size:0.7rem; background:#04844b; color:white; padding:1px 4px; border-radius:2px; margin-left:4px;">Record Updated</span></div>
-                        <div style="margin-left:15px; margin-top:5px; background:#f4fbf7; padding:10px; border:1px solid #c1eac5; border-radius:4px;">
-                            <div style="font-size:0.8125rem;">Changed <strong>Case Owner</strong> to <a href="#">Sarah Jenkins</a></div>
-                            <div style="font-size:0.8125rem;">Changed <strong>Status</strong> to <strong>Working</strong></div>
-                        </div>
-                        <div class="feed-info" style="margin-left:15px;">Just now</div>
-                    </div>
+                
                 </div>
-            </div>
         </div>
 
         <div class="col-details">
@@ -301,9 +294,9 @@
                     <span class="field-label">Priority</span><span id="view-priority" class="field-value">Medium</span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i>
                 </div>
                 <div class="detail-item"><span class="field-label">Contact Name</span><span id="view-contact" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
-                <div class="detail-item"><span class="field-label">Contact Phone</span><span id="view-cphone" class="field-value"></span></div>
+                <div class="detail-item"><span class="field-label">Contact Phone</span><span id="view-cphone" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
                 <div class="detail-item"><span class="field-label">Account Name</span><span id="view-account" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
-                <div class="detail-item"><span class="field-label">Contact Email</span><span id="view-cemail" class="field-value"></span></div>
+                <div class="detail-item"><span class="field-label">Contact Email</span><span id="view-cemail" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
                 <div class="detail-item"><span class="field-label">Type</span><span id="view-type" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
                 <div class="detail-item"><span class="field-label">Case Origin</span><span id="view-origin" class="field-value">Phone</span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
                 <div class="detail-item"><span class="field-label">Case Reason</span><span id="view-reason" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
@@ -313,7 +306,7 @@
                 <div class="detail-item"><span class="field-label">Web Name</span><span id="view-web-name" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
                 <div class="detail-item"><span class="field-label">Web Phone</span><span id="view-web-phone" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
                 <div class="detail-item"><span class="field-label">Date/Time Opened</span><span class="field-value">12/29/2025, 11:00 PM</span></div>
-                <div class="detail-item"><span class="field-label">Date/Time Closed</span><span class="field-value"></span></div>
+                <div class="detail-item"><span class="field-label">Date/Time Closed</span><span id="view-closed" class="field-value"></span></div>
                 <div class="detail-item"><span class="field-label">Product</span><span id="view-product" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
                 <div class="detail-item"><span class="field-label">Engineering Req Number</span><span id="view-eng-req" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
                 <div class="detail-item"><span class="field-label">Potential Liability</span><span id="view-liability" class="field-value"></span><i class="fas fa-pencil-alt edit-icon" onclick="enableEditMode()"></i></div>
@@ -332,7 +325,9 @@
             <div id="details-edit-mode">
                 <div style="font-size:0.75rem; text-align:right; color:#3e3e3c; padding: 10px 16px 0 0;"><span>*</span> = Required Information</div>
                 <div class="edit-form-container">
-                    <div class="edit-field"><label class="edit-label">Case Owner</label><div class="field-value" style="padding-left:0"><img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;"> Gin-E Neo</div></div>
+                    <div class="edit-field"><label class="edit-label">Case Owner</label>
+                        <div id="edit-owner-display" class="field-value" style="padding-left:0"><img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;"> Gin-E Neo</div>
+                    </div>
                     <div class="edit-field">
                         <label class="edit-label"><span>*</span> Status</label>
                         <select id="edit-status" class="sf-input-box">
@@ -357,13 +352,13 @@
                         <label class="edit-label">Contact Name</label>
                         <div class="search-wrapper"><input id="edit-contact" type="text" class="sf-input-box" placeholder="Search Contacts..."><i class="fas fa-search"></i></div>
                     </div>
-                    <div class="edit-field"><label class="edit-label">Contact Phone</label><div class="field-value" style="padding-left:0"></div></div>
+                    <div class="edit-field"><label class="edit-label">Contact Phone</label><input id="edit-cphone" type="text" class="sf-input-box"></div>
 
                     <div class="edit-field">
                         <label class="edit-label">Account Name</label>
                         <div class="search-wrapper"><input id="edit-account" type="text" class="sf-input-box" placeholder="Search Accounts..."><i class="fas fa-search"></i></div>
                     </div>
-                    <div class="edit-field"><label class="edit-label">Contact Email</label><div class="field-value" style="padding-left:0"></div></div>
+                    <div class="edit-field"><label class="edit-label">Contact Email</label><input id="edit-cemail" type="text" class="sf-input-box"></div>
 
                     <div class="edit-field">
                         <label class="edit-label">Type</label>
@@ -387,7 +382,7 @@
                     <div class="edit-field"><label class="edit-label">Web Phone</label><input id="edit-web-phone" type="text" class="sf-input-box"></div>
                     
                     <div class="edit-field"><label class="edit-label">Date/Time Opened</label><div class="field-value" style="padding-left:0">12/29/2025, 11:00 PM</div></div>
-                    <div class="edit-field"><label class="edit-label">Date/Time Closed</label><div class="field-value" style="padding-left:0"></div></div>
+                    <div class="edit-field"><label class="edit-label">Date/Time Closed</label><input id="edit-closed" type="text" class="sf-input-box"></div>
 
                     <div class="edit-field">
                         <label class="edit-label">Product</label>
@@ -441,7 +436,7 @@
             <div class="modal-body">
                 <div class="search-container">
                     <div class="search-label"><span class="required">*</span> Select New Owner</div>
-                    <div class="search-box"><div class="user-icon"><i class="fas fa-user"></i></div><input type="text" placeholder="Search Users..."><i class="fas fa-search" style="color:#706e6b;"></i></div>
+                    <div class="search-box"><div class="user-icon"><i class="fas fa-user"></i></div><input id="new-owner-input" type="text" placeholder="Search Users..."><i class="fas fa-search" style="color:#706e6b;"></i></div>
                 </div>
                 <div style="display:flex; align-items:center; margin-bottom:20px;">
                     <input type="checkbox" id="notify" style="margin-right:8px;"><label for="notify" style="font-size:0.8125rem; color:#080707;">Send notification email</label>
@@ -461,8 +456,8 @@
 
         // Field Mapping
         const fields = [
-            'status', 'priority', 'contact', 'account', 'type', 'origin', 'reason', 
-            'web-email', 'web-company', 'web-name', 'web-phone', 
+            'status', 'priority', 'contact', 'cphone', 'account', 'cemail', 'type', 'origin', 'reason', 
+            'web-email', 'web-company', 'web-name', 'web-phone', 'closed',
             'product', 'eng-req', 'liability', 'sla', 
             'subject', 'description', 'comments'
         ];
@@ -505,32 +500,92 @@
             document.getElementById('details-view-mode').style.display = 'grid';
         }
 
-        // AUTOMATION LOGIC
-        function runChangeOwner() {
+        // AUTOMATION LOGIC (UPDATED: NO DEFAULT FALBACK FOR MANUAL INPUT)
+        function runChangeOwner(botName = null) {
+            // 1. Get the name from the input
+            const inputField = document.getElementById('new-owner-input');
+            const nameFromInput = inputField.value.trim();
+            
+            // 2. Determine the final name.
+            // If botName is provided (Bot Trigger), use it.
+            // Otherwise, use exactly what is in the input box.
+            const newOwnerName = botName !== null ? botName : nameFromInput;
+
+            // 3. Validation: If manual entry is empty, stop.
+            if (!newOwnerName) {
+                alert("Please enter a name for the new owner.");
+                return;
+            }
+
+            // CLEAR INPUT IMMEDIATELY (As requested)
+            inputField.value = "";
+
             closeOwnerModal();
             document.getElementById('loading-overlay').style.display = 'flex';
+            
             setTimeout(() => {
                 document.getElementById('loading-overlay').style.display = 'none';
                 
                 // Update Status to Working
                 document.getElementById('hl-status').innerText = 'Working';
                 document.getElementById('view-status').innerText = 'Working';
-                document.getElementById('edit-status').value = 'Working'; // Sync hidden edit field too
+                document.getElementById('edit-status').value = 'Working'; 
                 
-                // Update Owner
+                // Update Owner in View Mode
                 const ownerField = document.getElementById('detail-owner');
                 ownerField.innerHTML = `
                     <img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;">
-                    <a href="#">Sarah Jenkins</a>
+                    <a href="#">${newOwnerName}</a>
                     <i class="fas fa-user-friends" style="color:#0176d3; margin-left: auto; font-size: 0.8rem; cursor: pointer;" onclick="openOwnerModal()" title="Change Owner"></i>
                 `;
+
+                // Update Owner in Edit Mode (Hidden)
+                const editOwnerDisplay = document.getElementById('edit-owner-display');
+                if(editOwnerDisplay) {
+                    editOwnerDisplay.innerHTML = `<img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;"> ${newOwnerName}`;
+                }
                 
+                // --- NEW: DYNAMIC FEED ENTRY (LOGGING AS ONE RECORD) ---
+                const feedList = document.getElementById('feed-list');
+                const feedAnchor = document.getElementById('feed-anchor');
+                
+                const newFeedItemHTML = `
+                <div class="feed-item">
+                    <div class="avatar bot"><i class="fas fa-robot"></i></div>
+                    <div class="feed-content">
+                        <div class="feed-header">
+                            <i class="fas fa-chevron-right" style="font-size:0.7rem; color:#706e6b; margin-right:5px;"></i>
+                            <a href="#">System Automation</a> 
+                            <span style="font-size:0.7rem; background:#04844b; color:white; padding:1px 4px; border-radius:2px; margin-left:4px;">Record Updated</span>
+                        </div>
+                        <div style="margin-left:15px; margin-top:5px; background:#f4fbf7; padding:10px; border:1px solid #c1eac5; border-radius:4px;">
+                            <div style="font-size:0.8125rem;">Changed <strong>Case Owner</strong> to <a href="#">${newOwnerName}</a></div>
+                            <div style="font-size:0.8125rem;">Changed <strong>Status</strong> to <strong>Working</strong></div>
+                        </div>
+                        <div class="feed-info" style="margin-left:15px;">Just now</div>
+                    </div>
+                </div>`;
+                
+                // Insert the new item immediately after the feed filter (Top of list)
+                feedAnchor.insertAdjacentHTML('afterend', newFeedItemHTML);
+
                 const row = document.getElementById('owner-row');
                 row.style.backgroundColor = "#fff9c4";
-                document.getElementById('success-feed-item').style.display = 'flex';
                 setTimeout(() => { row.style.backgroundColor = "white"; }, 2000);
             }, 2000);
         }
+
+        // FAKE API LISTENER (UPDATED: PASSES 'Sarah Jenkins' EXPLICITLY)
+        window.addEventListener('DOMContentLoaded', (event) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('bot_action') === 'auto_assign') {
+                console.log("Bot trigger detected.");
+                setTimeout(() => {
+                    // Explicitly tell the function to use Sarah Jenkins for the demo
+                    runChangeOwner('Sarah Jenkins'); 
+                }, 1500);
+            }
+        });
     </script>
 </body>
 </html>
