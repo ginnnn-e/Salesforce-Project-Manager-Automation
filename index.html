@@ -579,11 +579,12 @@
         });
 
         // --- 2. MAILBOX POLLER (Option B - n8n HTTP Request) ---
-        let lastKnownOwner = ""; // To prevent infinite looping
+        // We set this to NULL initially so we know it's the first time we are checking
+        let lastKnownOwner = null; 
 
         // Check the mailbox every 2 seconds
         setInterval(() => {
-            if(PANTRY_ID === 'YOUR_PANTRY_ID_HERE') return; // Don't run if ID not set
+            if(PANTRY_ID === 'YOUR_PANTRY_ID_HERE') return; 
 
             fetch(PANTRY_URL)
                 .then(response => {
@@ -591,7 +592,16 @@
                     throw new Error('Empty basket or network error');
                 })
                 .then(data => {
-                    // Check if 'owner' exists and is DIFFERENT from what we already did
+                    // CASE 1: First Load. 
+                    // We just save the current name to memory but DO NOT run the change function.
+                    if (lastKnownOwner === null) {
+                        console.log("System Initialized. Current Basket State:", data.owner);
+                        lastKnownOwner = data.owner || ""; // Save whatever is there to ignore it
+                        return; 
+                    }
+
+                    // CASE 2: New Update.
+                    // If the name in the mailbox is DIFFERENT from what we remember, then run the update.
                     if (data.owner && data.owner !== lastKnownOwner) {
                         console.log("New owner received from API:", data.owner);
                         lastKnownOwner = data.owner; // Update memory so we don't re-run
