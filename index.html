@@ -450,11 +450,15 @@
     <div id="loading-overlay"><div class="spinner-circle"></div><div style="font-weight: bold; color: #0176d3; margin-top:10px;">Automating Assignment...</div></div>
 
     <script>
+        // --- CONFIGURATION: PASTE YOUR PANTRY ID HERE ---
+        const PANTRY_ID = 'c64d05d8-dc6b-42a6-9f46-7b78d8732d35'; 
+        const PANTRY_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/salesforce`;
+
         // Modal Logic
         function openOwnerModal() { document.getElementById('ownerModal').style.display = 'flex'; }
         function closeOwnerModal() { document.getElementById('ownerModal').style.display = 'none'; }
 
-        // Field Mapping for Edit Mode
+        // Field Mapping
         const fields = [
             'status', 'priority', 'contact', 'cphone', 'account', 'cemail', 'type', 'origin', 'reason', 
             'web-email', 'web-company', 'web-name', 'web-phone', 'closed',
@@ -484,10 +488,8 @@
                 const editEl = document.getElementById('edit-' + field);
                 if(viewEl && editEl) viewEl.innerText = editEl.value;
             });
-            // Update Top Highlights
             document.getElementById('hl-status').innerText = document.getElementById('edit-status').value;
             document.getElementById('hl-priority').innerText = document.getElementById('edit-priority').value;
-
             document.getElementById('details-edit-mode').style.display = 'none';
             document.getElementById('details-view-mode').style.display = 'grid';
         }
@@ -497,11 +499,11 @@
             const inputField = document.getElementById('new-owner-input');
             const nameFromInput = inputField.value.trim();
             
-            // LOGIC: If triggered by URL (botName), use that. Otherwise use Input box.
+            // Logic: Use Bot name if provided, otherwise use manual input
             const newOwnerName = botName ? botName : nameFromInput;
 
             if (!newOwnerName) {
-                alert("Please enter a name for the new owner.");
+                if(!botName) alert("Please enter a name for the new owner.");
                 return;
             }
 
@@ -512,7 +514,7 @@
             // Show Loading Spinner
             document.getElementById('loading-overlay').style.display = 'flex';
             
-            // Simulate API Delay
+            // Simulate Processing Delay
             setTimeout(() => {
                 document.getElementById('loading-overlay').style.display = 'none';
                 
@@ -566,24 +568,41 @@
             }, 1500);
         }
 
-        // --- MAGIC URL LISTENER (THE "API") ---
+        // --- 1. MAGIC URL LISTENER (Option A) ---
         window.addEventListener('DOMContentLoaded', (event) => {
             const urlParams = new URLSearchParams(window.location.search);
-            
-            // Check for secret code: ?bot_action=auto_assign
             if (urlParams.get('bot_action') === 'auto_assign') {
                 console.log("Bot trigger detected.");
-                
-                // Check for dynamic name: &owner=YourName
-                // If &owner is missing, fallback to 'Sarah Jenkins'
                 const targetOwner = urlParams.get('owner') || 'Sarah Jenkins';
-                
-                setTimeout(() => {
-                    // Run the update with the name from the URL!
-                    runChangeOwner(targetOwner); 
-                }, 1000);
+                setTimeout(() => { runChangeOwner(targetOwner); }, 1000);
             }
         });
+
+        // --- 2. MAILBOX POLLER (Option B - n8n HTTP Request) ---
+        let lastKnownOwner = ""; // To prevent infinite looping
+
+        // Check the mailbox every 2 seconds
+        setInterval(() => {
+            if(PANTRY_ID === 'YOUR_PANTRY_ID_HERE') return; // Don't run if ID not set
+
+            fetch(PANTRY_URL)
+                .then(response => {
+                    if(response.ok) return response.json();
+                    throw new Error('Empty basket or network error');
+                })
+                .then(data => {
+                    // Check if 'owner' exists and is DIFFERENT from what we already did
+                    if (data.owner && data.owner !== lastKnownOwner) {
+                        console.log("New owner received from API:", data.owner);
+                        lastKnownOwner = data.owner; // Update memory so we don't re-run
+                        runChangeOwner(data.owner);  // Trigger the UI update
+                    }
+                })
+                .catch(err => {
+                    // Silent fail - just waiting for data
+                });
+        }, 2000);
+
     </script>
 </body>
 </html>
