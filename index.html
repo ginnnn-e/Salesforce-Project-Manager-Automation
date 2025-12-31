@@ -454,7 +454,7 @@
         function openOwnerModal() { document.getElementById('ownerModal').style.display = 'flex'; }
         function closeOwnerModal() { document.getElementById('ownerModal').style.display = 'none'; }
 
-        // Field Mapping
+        // Field Mapping for Edit Mode
         const fields = [
             'status', 'priority', 'contact', 'cphone', 'account', 'cemail', 'type', 'origin', 'reason', 
             'web-email', 'web-company', 'web-name', 'web-phone', 'closed',
@@ -464,15 +464,11 @@
 
         // EDIT MODE LOGIC
         function enableEditMode() {
-            // Sync View -> Edit (Pre-fill form with existing data)
             fields.forEach(field => {
                 const viewEl = document.getElementById('view-' + field);
                 const editEl = document.getElementById('edit-' + field);
-                if(viewEl && editEl) {
-                    editEl.value = viewEl.innerText;
-                }
+                if(viewEl && editEl) editEl.value = viewEl.innerText;
             });
-
             document.getElementById('details-view-mode').style.display = 'none';
             document.getElementById('details-edit-mode').style.display = 'flex';
         }
@@ -483,15 +479,11 @@
         }
 
         function saveEditMode() {
-            // Sync Edit -> View (Save data)
             fields.forEach(field => {
                 const viewEl = document.getElementById('view-' + field);
                 const editEl = document.getElementById('edit-' + field);
-                if(viewEl && editEl) {
-                    viewEl.innerText = editEl.value;
-                }
+                if(viewEl && editEl) viewEl.innerText = editEl.value;
             });
-
             // Update Top Highlights
             document.getElementById('hl-status').innerText = document.getElementById('edit-status').value;
             document.getElementById('hl-priority').innerText = document.getElementById('edit-priority').value;
@@ -500,38 +492,36 @@
             document.getElementById('details-view-mode').style.display = 'grid';
         }
 
-        // AUTOMATION LOGIC (UPDATED: NO DEFAULT FALBACK FOR MANUAL INPUT)
+        // --- CORE AUTOMATION FUNCTION ---
         function runChangeOwner(botName = null) {
-            // 1. Get the name from the input
             const inputField = document.getElementById('new-owner-input');
             const nameFromInput = inputField.value.trim();
             
-            // 2. Determine the final name.
-            // If botName is provided (Bot Trigger), use it.
-            // Otherwise, use exactly what is in the input box.
-            const newOwnerName = botName !== null ? botName : nameFromInput;
+            // LOGIC: If triggered by URL (botName), use that. Otherwise use Input box.
+            const newOwnerName = botName ? botName : nameFromInput;
 
-            // 3. Validation: If manual entry is empty, stop.
             if (!newOwnerName) {
                 alert("Please enter a name for the new owner.");
                 return;
             }
 
-            // CLEAR INPUT IMMEDIATELY (As requested)
+            // Clear manual input
             inputField.value = "";
-
             closeOwnerModal();
+            
+            // Show Loading Spinner
             document.getElementById('loading-overlay').style.display = 'flex';
             
+            // Simulate API Delay
             setTimeout(() => {
                 document.getElementById('loading-overlay').style.display = 'none';
                 
-                // Update Status to Working
+                // 1. Update Status
                 document.getElementById('hl-status').innerText = 'Working';
                 document.getElementById('view-status').innerText = 'Working';
                 document.getElementById('edit-status').value = 'Working'; 
                 
-                // Update Owner in View Mode
+                // 2. Update Owner Display (View Mode)
                 const ownerField = document.getElementById('detail-owner');
                 ownerField.innerHTML = `
                     <img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;">
@@ -539,18 +529,16 @@
                     <i class="fas fa-user-friends" style="color:#0176d3; margin-left: auto; font-size: 0.8rem; cursor: pointer;" onclick="openOwnerModal()" title="Change Owner"></i>
                 `;
 
-                // Update Owner in Edit Mode (Hidden)
+                // 3. Update Owner Display (Edit Mode)
                 const editOwnerDisplay = document.getElementById('edit-owner-display');
                 if(editOwnerDisplay) {
                     editOwnerDisplay.innerHTML = `<img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;"> ${newOwnerName}`;
                 }
                 
-                // --- NEW: DYNAMIC FEED ENTRY (LOGGING AS ONE RECORD) ---
-                const feedList = document.getElementById('feed-list');
+                // 4. Create New Feed Entry (Audit Log)
                 const feedAnchor = document.getElementById('feed-anchor');
-                
                 const newFeedItemHTML = `
-                <div class="feed-item">
+                <div class="feed-item" style="animation: fadeIn 0.5s ease-in-out;">
                     <div class="avatar bot"><i class="fas fa-robot"></i></div>
                     <div class="feed-content">
                         <div class="feed-header">
@@ -566,24 +554,34 @@
                     </div>
                 </div>`;
                 
-                // Insert the new item immediately after the feed filter (Top of list)
+                // Insert at top of feed
                 feedAnchor.insertAdjacentHTML('afterend', newFeedItemHTML);
 
+                // 5. Flash the row yellow
                 const row = document.getElementById('owner-row');
                 row.style.backgroundColor = "#fff9c4";
+                document.getElementById('success-feed-item').style.display = 'flex';
                 setTimeout(() => { row.style.backgroundColor = "white"; }, 2000);
-            }, 2000);
+
+            }, 1500);
         }
 
-        // FAKE API LISTENER (UPDATED: PASSES 'Sarah Jenkins' EXPLICITLY)
+        // --- MAGIC URL LISTENER (THE "API") ---
         window.addEventListener('DOMContentLoaded', (event) => {
             const urlParams = new URLSearchParams(window.location.search);
+            
+            // Check for secret code: ?bot_action=auto_assign
             if (urlParams.get('bot_action') === 'auto_assign') {
                 console.log("Bot trigger detected.");
+                
+                // Check for dynamic name: &owner=YourName
+                // If &owner is missing, fallback to 'Sarah Jenkins'
+                const targetOwner = urlParams.get('owner') || 'Sarah Jenkins';
+                
                 setTimeout(() => {
-                    // Explicitly tell the function to use Sarah Jenkins for the demo
-                    runChangeOwner('Sarah Jenkins'); 
-                }, 1500);
+                    // Run the update with the name from the URL!
+                    runChangeOwner(targetOwner); 
+                }, 1000);
             }
         });
     </script>
