@@ -450,159 +450,121 @@
     <div id="loading-overlay"><div class="spinner-circle"></div><div style="font-weight: bold; color: #0176d3; margin-top:10px;">Automating Assignment...</div></div>
 
     <script>
-        // --- CONFIGURATION: PASTE YOUR PANTRY ID HERE ---
-        const PANTRY_ID = 'c64d05d8-dc6b-42a6-9f46-7b78d8732d35'; 
+        // --- CONFIGURATION ---
+        const PANTRY_ID = 'c64d05d8-dc6b-42a6-9f46-7b78d8732d35'; // The ID from your uploaded file
         const PANTRY_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/salesforce`;
 
         // Modal Logic
         function openOwnerModal() { document.getElementById('ownerModal').style.display = 'flex'; }
         function closeOwnerModal() { document.getElementById('ownerModal').style.display = 'none'; }
+        const fields = ['status', 'priority', 'contact', 'cphone', 'account', 'cemail', 'type', 'origin', 'reason', 'web-email', 'web-company', 'web-name', 'web-phone', 'closed', 'product', 'eng-req', 'liability', 'sla', 'subject', 'description', 'comments'];
 
-        // Field Mapping
-        const fields = [
-            'status', 'priority', 'contact', 'cphone', 'account', 'cemail', 'type', 'origin', 'reason', 
-            'web-email', 'web-company', 'web-name', 'web-phone', 'closed',
-            'product', 'eng-req', 'liability', 'sla', 
-            'subject', 'description', 'comments'
-        ];
+        // --- CORE UPDATE FUNCTION ---
+        function runChangeOwner(newOwnerName) {
+            console.log("🚀 EXECUTING UPDATE FOR:", newOwnerName);
 
-        // EDIT MODE LOGIC
+            // 1. Update UI Text
+            document.getElementById('hl-status').innerText = 'Working';
+            document.getElementById('view-status').innerText = 'Working';
+            
+            // 2. Update Owner Field (With Flash Animation)
+            const ownerHTML = `
+                <img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;">
+                <a href="#">${newOwnerName}</a>
+                <i class="fas fa-user-friends" style="color:#0176d3; margin-left: auto; font-size: 0.8rem; cursor: pointer;" onclick="openOwnerModal()" title="Change Owner"></i>
+            `;
+            document.getElementById('detail-owner').innerHTML = ownerHTML;
+            const editDisplay = document.getElementById('edit-owner-display');
+            if(editDisplay) editDisplay.innerHTML = ownerHTML;
+
+            // 3. Add Feed Item
+            const feedAnchor = document.getElementById('feed-anchor');
+            const newFeedItemHTML = `
+            <div class="feed-item" style="animation: fadeIn 0.5s ease-in-out;">
+                <div class="avatar bot"><i class="fas fa-robot"></i></div>
+                <div class="feed-content">
+                    <div class="feed-header">
+                        <i class="fas fa-chevron-right" style="font-size:0.7rem; color:#706e6b; margin-right:5px;"></i>
+                        <a href="#">System Automation</a> 
+                        <span style="font-size:0.7rem; background:#04844b; color:white; padding:1px 4px; border-radius:2px; margin-left:4px;">Record Updated</span>
+                    </div>
+                    <div style="margin-left:15px; margin-top:5px; background:#f4fbf7; padding:10px; border:1px solid #c1eac5; border-radius:4px;">
+                        <div style="font-size:0.8125rem;">Changed <strong>Case Owner</strong> to <a href="#">${newOwnerName}</a></div>
+                        <div style="font-size:0.8125rem;">Changed <strong>Status</strong> to <strong>Working</strong></div>
+                    </div>
+                    <div class="feed-info" style="margin-left:15px;">Just now</div>
+                </div>
+            </div>`;
+            
+            feedAnchor.insertAdjacentHTML('afterend', newFeedItemHTML);
+
+            // 4. Force Flash Yellow (So you KNOW it worked)
+            const row = document.getElementById('owner-row');
+            row.style.transition = 'none'; // Reset animation
+            row.style.backgroundColor = "#fff9c4";
+            setTimeout(() => { 
+                row.style.transition = 'background 1s'; 
+                row.style.backgroundColor = "white"; 
+            }, 500);
+        }
+
+        // --- POLLING LOGIC (UPDATED: ALWAYS RUNS) ---
+        // We removed the "lastKnownOwner" check so it triggers EVERY time you update Pantry.
+        
+        let previousDataString = ""; // Raw string comparison to detect ANY change
+
+        setInterval(() => {
+            fetch(PANTRY_URL + '?_t=' + new Date().getTime()) // Add timestamp to prevent browser caching
+                .then(response => {
+                    if(response.ok) return response.json();
+                    throw new Error('Basket empty');
+                })
+                .then(data => {
+                    // Debug Log
+                    // console.log("Checking Mailbox...", data);
+
+                    // VALIDATION: Ensure data has 'owner'
+                    if (data && data.owner) {
+                        const currentDataString = JSON.stringify(data);
+                        
+                        // Only run if the DATA packet changed (e.g. you sent a new request from n8n)
+                        if (currentDataString !== previousDataString) {
+                            console.log("✅ NEW COMMAND RECEIVED:", data.owner);
+                            previousDataString = currentDataString;
+                            runChangeOwner(data.owner);
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.warn("Mailbox check failed:", err);
+                });
+        }, 1000); // Checks every 1 second
+
+        // --- BOILERPLATE UI STUFF ---
         function enableEditMode() {
-            fields.forEach(field => {
-                const viewEl = document.getElementById('view-' + field);
-                const editEl = document.getElementById('edit-' + field);
-                if(viewEl && editEl) editEl.value = viewEl.innerText;
+            fields.forEach(f => {
+                const v = document.getElementById('view-' + f);
+                const e = document.getElementById('edit-' + f);
+                if(v && e) e.value = v.innerText;
             });
             document.getElementById('details-view-mode').style.display = 'none';
             document.getElementById('details-edit-mode').style.display = 'flex';
         }
-
         function cancelEditMode() {
             document.getElementById('details-edit-mode').style.display = 'none';
             document.getElementById('details-view-mode').style.display = 'grid';
         }
-
         function saveEditMode() {
-            fields.forEach(field => {
-                const viewEl = document.getElementById('view-' + field);
-                const editEl = document.getElementById('edit-' + field);
-                if(viewEl && editEl) viewEl.innerText = editEl.value;
+            fields.forEach(f => {
+                const v = document.getElementById('view-' + f);
+                const e = document.getElementById('edit-' + f);
+                if(v && e) v.innerText = e.value;
             });
             document.getElementById('hl-status').innerText = document.getElementById('edit-status').value;
             document.getElementById('hl-priority').innerText = document.getElementById('edit-priority').value;
             document.getElementById('details-edit-mode').style.display = 'none';
             document.getElementById('details-view-mode').style.display = 'grid';
         }
-
-        // --- CORE AUTOMATION FUNCTION ---
-        function runChangeOwner(botName = null) {
-            const inputField = document.getElementById('new-owner-input');
-            const nameFromInput = inputField.value.trim();
-            
-            // Logic: Use Bot name if provided, otherwise use manual input
-            const newOwnerName = botName ? botName : nameFromInput;
-
-            if (!newOwnerName) {
-                if(!botName) alert("Please enter a name for the new owner.");
-                return;
-            }
-
-            // Clear manual input
-            inputField.value = "";
-            closeOwnerModal();
-            
-            // Show Loading Spinner
-            document.getElementById('loading-overlay').style.display = 'flex';
-            
-            // Simulate Processing Delay
-            setTimeout(() => {
-                document.getElementById('loading-overlay').style.display = 'none';
-                
-                // 1. Update Status
-                document.getElementById('hl-status').innerText = 'Working';
-                document.getElementById('view-status').innerText = 'Working';
-                document.getElementById('edit-status').value = 'Working'; 
-                
-                // 2. Update Owner Display (View Mode)
-                const ownerField = document.getElementById('detail-owner');
-                ownerField.innerHTML = `
-                    <img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;">
-                    <a href="#">${newOwnerName}</a>
-                    <i class="fas fa-user-friends" style="color:#0176d3; margin-left: auto; font-size: 0.8rem; cursor: pointer;" onclick="openOwnerModal()" title="Change Owner"></i>
-                `;
-
-                // 3. Update Owner Display (Edit Mode)
-                const editOwnerDisplay = document.getElementById('edit-owner-display');
-                if(editOwnerDisplay) {
-                    editOwnerDisplay.innerHTML = `<img src="https://www.salesforce.com/news/wp-content/uploads/sites/3/2021/05/Salesforce-Logo.png" style="width:20px; border-radius:50%; margin-right:5px;"> ${newOwnerName}`;
-                }
-                
-                // 4. Create New Feed Entry (Audit Log)
-                const feedAnchor = document.getElementById('feed-anchor');
-                const newFeedItemHTML = `
-                <div class="feed-item" style="animation: fadeIn 0.5s ease-in-out;">
-                    <div class="avatar bot"><i class="fas fa-robot"></i></div>
-                    <div class="feed-content">
-                        <div class="feed-header">
-                            <i class="fas fa-chevron-right" style="font-size:0.7rem; color:#706e6b; margin-right:5px;"></i>
-                            <a href="#">System Automation</a> 
-                            <span style="font-size:0.7rem; background:#04844b; color:white; padding:1px 4px; border-radius:2px; margin-left:4px;">Record Updated</span>
-                        </div>
-                        <div style="margin-left:15px; margin-top:5px; background:#f4fbf7; padding:10px; border:1px solid #c1eac5; border-radius:4px;">
-                            <div style="font-size:0.8125rem;">Changed <strong>Case Owner</strong> to <a href="#">${newOwnerName}</a></div>
-                            <div style="font-size:0.8125rem;">Changed <strong>Status</strong> to <strong>Working</strong></div>
-                        </div>
-                        <div class="feed-info" style="margin-left:15px;">Just now</div>
-                    </div>
-                </div>`;
-                
-                // Insert at top of feed
-                feedAnchor.insertAdjacentHTML('afterend', newFeedItemHTML);
-
-                // 5. Flash the row yellow
-                const row = document.getElementById('owner-row');
-                row.style.backgroundColor = "#fff9c4";
-                document.getElementById('success-feed-item').style.display = 'flex';
-                setTimeout(() => { row.style.backgroundColor = "white"; }, 2000);
-
-            }, 1500);
-        }
-
-        // --- 1. MAGIC URL LISTENER (Option A) ---
-        window.addEventListener('DOMContentLoaded', (event) => {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('bot_action') === 'auto_assign') {
-                console.log("Bot trigger detected.");
-                const targetOwner = urlParams.get('owner') || 'Sarah Jenkins';
-                setTimeout(() => { runChangeOwner(targetOwner); }, 1000);
-            }
-        });
-
-        // --- 2. MAILBOX POLLER (Option B - n8n HTTP Request) ---
-        let lastKnownOwner = ""; // To prevent infinite looping
-
-        // Check the mailbox every 2 seconds
-        setInterval(() => {
-            if(PANTRY_ID === 'YOUR_PANTRY_ID_HERE') return; // Don't run if ID not set
-
-            fetch(PANTRY_URL)
-                .then(response => {
-                    if(response.ok) return response.json();
-                    throw new Error('Empty basket or network error');
-                })
-                .then(data => {
-                    // Check if 'owner' exists and is DIFFERENT from what we already did
-                    if (data.owner && data.owner !== lastKnownOwner) {
-                        console.log("New owner received from API:", data.owner);
-                        lastKnownOwner = data.owner; // Update memory so we don't re-run
-                        runChangeOwner(data.owner);  // Trigger the UI update
-                    }
-                })
-                .catch(err => {
-                    // Silent fail - just waiting for data
-                });
-        }, 2000);
-
     </script>
 </body>
 </html>
